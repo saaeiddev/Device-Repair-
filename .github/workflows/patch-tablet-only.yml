@@ -1,0 +1,148 @@
+name: Patch tablet hardware only
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/patch-tablet-only.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Replace only buildTablet and validate
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('app-realistic.js')
+          text = p.read_text(encoding='utf-8')
+          start = text.index('function buildTablet(){')
+          end = text.index('\nfunction buildLaptop(){', start)
+
+          new_func = r'''function buildTablet(){
+  const g=inspectionGroup;
+
+  // Keep the original tablet chassis, but make the internal layout much clearer.
+  const chassis=new THREE.Group();
+  chassis.add(rbox(3.96,.16,5.25,.24,MAT.aluminum(),[0,0,0]));
+  chassis.add(rbox(3.70,.07,4.98,.20,new THREE.MeshStandardMaterial({color:0x252a2f,roughness:.58,metalness:.42}),[0,.11,0]));
+  registerPart(g,'motherboard',chassis,[0,-.10,0],false);
+
+  // Display lifts much farther away in exploded view so it no longer hides internals.
+  const display=makeDisplayAssembly(3.82,5.10,.10);
+  display.position.set(0,.42,0);
+  registerPart(g,'display',display,[0,2.05,.20]);
+
+  // Large, clearly readable logic-board area with visible PCB traces and shielding.
+  const board=new THREE.Group();
+  const mainPCB=makePCB(3.18,1.34,'green',.065);
+  board.add(mainPCB);
+
+  const shieldA=rbox(.72,.075,.58,.035,MAT.metal(),[-1.02,.105,-.18]);
+  const shieldB=rbox(.62,.075,.50,.035,MAT.metal(),[1.05,.105,-.16]);
+  board.add(shieldA,shieldB);
+
+  const vrm=makeVRMCluster();
+  vrm.scale.setScalar(.58);
+  vrm.position.set(0,.12,.38);
+  board.add(vrm);
+
+  // Small board connectors and visible gold contact areas.
+  for(const x of [-1.30,-.96,-.62,.72,1.06,1.40]){
+    board.add(rbox(.22,.045,.10,.012,MAT.gold(),[x,.075,.55]));
+  }
+  for(const x of [-1.18,-.80,.82,1.20]){
+    board.add(cyl(.038,.11,new THREE.MeshStandardMaterial({color:0x2d343b,roughness:.35,metalness:.62}),[x,.10,-.48],[0,0,0],18));
+  }
+
+  board.position.set(0,.23,-1.76);
+  registerPart(g,'motherboard',board,[0,.72,-1.62]);
+
+  // CPU / SoC: deliberately separated visually from nearby chips.
+  const cpu=makeCPU(.94,true);
+  cpu.position.set(-.82,.39,-1.92);
+  registerPart(g,'cpu',cpu,[-2.20,1.05,-1.48]);
+
+  // GPU teaching representation: separate highlighted package for clarity.
+  const gpu=makeCPU(.78,true);
+  gpu.scale.set(.86,1,.86);
+  gpu.position.set(.05,.385,-1.88);
+  registerPart(g,'gpu',gpu,[0,1.16,-1.72]);
+
+  // RAM was previously not represented as a distinct clickable part.
+  const ram=new THREE.Group();
+  const ramChip1=makeIC(.42,.34,.065);ramChip1.position.set(-.25,0,0);ram.add(ramChip1);
+  const ramChip2=makeIC(.42,.34,.065);ramChip2.position.set(.25,0,0);ram.add(ramChip2);
+  ram.position.set(.86,.38,-1.91);
+  registerPart(g,'ram',ram,[1.95,1.02,-1.42]);
+
+  // NAND storage shown as two recognizable packages rather than one tiny block.
+  const storage=new THREE.Group();
+  const nand1=makeIC(.38,.46,.060);nand1.position.set(-.23,0,0);storage.add(nand1);
+  const nand2=makeIC(.38,.46,.060);nand2.position.set(.23,0,0);storage.add(nand2);
+  storage.position.set(1.38,.36,-1.45);
+  registerPart(g,'storage',storage,[2.38,.72,-.42]);
+
+  // Three large battery cells make the power section instantly recognizable.
+  const battery=makeBatteryPack(3.20,2.72,3);
+  battery.position.set(0,.19,.66);
+  registerPart(g,'battery',battery,[0,-1.02,.92]);
+
+  // Add visible flex/ribbon cables for realistic internal tablet anatomy.
+  const flexMat=new THREE.MeshStandardMaterial({color:0xc77a2b,roughness:.42,metalness:.30});
+  const flex=new THREE.Group();
+  flex.add(rbox(.22,.018,1.18,.025,flexMat,[-1.40,.30,-.55]));
+  flex.add(rbox(.22,.018,.90,.025,flexMat,[1.38,.30,-.72]));
+  flex.add(rbox(1.30,.018,.18,.025,flexMat,[.55,.30,.12]));
+  flex.add(rbox(.48,.028,.22,.025,MAT.gold(),[-1.40,.315,.02]));
+  flex.add(rbox(.48,.028,.22,.025,MAT.gold(),[1.38,.315,-.25]));
+  g.add(flex);
+
+  // More obvious rear camera module.
+  const cam=makeCameraArray(2,false);
+  cam.scale.setScalar(.78);
+  cam.position.set(-1.24,.38,-2.34);
+  registerPart(g,'camera',cam,[-1.86,1.08,-1.86]);
+
+  // Speakers remain left/right but explode outward farther for readability.
+  const speakerL=makeSpeaker(1.10,.24);
+  speakerL.position.set(-1.30,.22,2.22);
+  registerPart(g,'speaker',speakerL,[-1.95,.42,1.48]);
+
+  const speakerR=makeSpeaker(1.10,.24);
+  speakerR.position.set(1.30,.22,2.22);
+  registerPart(g,'speaker',speakerR,[1.95,.42,1.48]);
+
+  // Wi‑Fi module scaled up slightly so its shield and antenna connectors are visible.
+  const wifi=makeWifiModule();
+  wifi.scale.setScalar(1.10);
+  wifi.position.set(-1.48,.34,-1.26);
+  registerPart(g,'wifi',wifi,[-2.22,.56,-.22]);
+
+  // USB-C port stays physically aligned with the tablet body.
+  const port=makePort('usb-c',.94);
+  port.rotation.x=Math.PI/2;
+  port.position.set(0,.12,2.51);
+  registerPart(g,'port',port,[0,-.42,1.72]);
+}'''
+
+          patched = text[:start] + new_func + text[end:]
+          p.write_text(patched, encoding='utf-8')
+          PY
+
+          node --check app-realistic.js
+
+          git config user.name "Amir Saeid Dehghan"
+          git config user.email "108151841+saaeiddev@users.noreply.github.com"
+          git add app-realistic.js
+          git commit -m "Improve tablet hardware visibility only"
+          git push origin main
