@@ -24,4 +24,4 @@ python3 -m http.server 8000
 Then open `http://localhost:8000`.
 
 ## GitHub Pages
-The site is static and can be deployed directly from the repository root on the `main` branch.
+The site is static and the repository includes a GitHub Actions Pages workflow that publishes the `main` branch.
