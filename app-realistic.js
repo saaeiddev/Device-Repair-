@@ -322,7 +322,110 @@ function buildSmartphone(){
   const display=makeDisplayAssembly(2.22,4.30,.095);display.position.set(0,.39,0);registerPart(g,'display',display,[0,1.35,0]);const board=makePhoneLogicBoard(1.55,1.45);board.position.set(0,.18,-1.25);registerPart(g,'motherboard',board,[-1.55,.35,-.9]);const cpu=makeCPU(.72,true);cpu.position.set(-.28,.29,-1.36);registerPart(g,'cpu',cpu,[-2.2,.55,-1.1]);const ram=makeIC(.34,.30,.06);ram.position.set(.25,.29,-1.34);registerPart(g,'ram',ram,[1.9,.55,-1.1]);const storage=makeIC(.30,.42,.055);storage.position.set(.60,.29,-.92);registerPart(g,'storage',storage,[2.15,.35,-.25]);const battery=makeBatteryPack(1.72,2.15,1);battery.position.set(0,.17,.58);registerPart(g,'battery',battery,[0,-.82,.72]);const cam=makeCameraArray(3,false);cam.rotation.z=Math.PI/2;cam.position.set(-.62,.28,-1.80);registerPart(g,'camera',cam,[-1.9,.75,-1.45]);const speaker=makeSpeaker(1.0,.24);speaker.position.set(0,.19,1.75);registerPart(g,'speaker',speaker,[0,.4,1.3]);const wifi=makeWifiModule();wifi.scale.setScalar(.78);wifi.position.set(-.68,.26,-.68);registerPart(g,'wifi',wifi,[-1.7,.3,.2]);const port=makePort('usb-c',.72);port.rotation.x=Math.PI/2;port.position.set(0,.10,2.08);registerPart(g,'port',port,[0,-.35,1.55]);
 }
 function buildTablet(){
-  const g=inspectionGroup;registerPart(g,'motherboard',rbox(3.96,.16,5.25,.24,MAT.aluminum(),[0,0,0]),[0,-.1,0],false);const display=makeDisplayAssembly(3.82,5.10,.10);display.position.set(0,.38,0);registerPart(g,'display',display,[0,1.45,0]);const board=makePhoneLogicBoard(3.05,1.10);board.position.set(0,.18,-1.83);registerPart(g,'motherboard',board,[0,.45,-1.35]);const cpu=makeCPU(.78,true);cpu.position.set(-.42,.29,-1.88);registerPart(g,'cpu',cpu,[-1.85,.6,-1.25]);const gpu=makeCPU(.58,true);gpu.position.set(.38,.28,-1.84);gpu.scale.set(.72,1,.72);registerPart(g,'gpu',gpu,[1.65,.6,-1.2]);const storage=makeIC(.38,.45,.055);storage.position.set(1.08,.29,-1.80);registerPart(g,'storage',storage,[2.35,.28,-.5]);const battery=makeBatteryPack(3.0,3.0,2);battery.position.set(0,.16,.55);registerPart(g,'battery',battery,[0,-.80,.75]);const cam=makeCameraArray(1,true);cam.position.set(0,.28,-2.32);registerPart(g,'camera',cam,[0,.75,-1.8]);const speakerL=makeSpeaker(1.0,.20);speakerL.position.set(-1.25,.18,2.22);registerPart(g,'speaker',speakerL,[-1.6,.3,1.3]);const speakerR=makeSpeaker(1.0,.20);speakerR.position.set(1.25,.18,2.22);registerPart(g,'speaker',speakerR,[1.6,.3,1.3]);const wifi=makeWifiModule();wifi.position.set(-1.38,.25,-1.56);registerPart(g,'wifi',wifi,[-2.1,.25,-.25]);const port=makePort('usb-c',.86);port.rotation.x=Math.PI/2;port.position.set(0,.09,2.52);registerPart(g,'port',port,[0,-.28,1.55]);
+  const g=inspectionGroup;
+
+  // Keep the original tablet chassis, but make the internal layout much clearer.
+  const chassis=new THREE.Group();
+  chassis.add(rbox(3.96,.16,5.25,.24,MAT.aluminum(),[0,0,0]));
+  chassis.add(rbox(3.70,.07,4.98,.20,new THREE.MeshStandardMaterial({color:0x252a2f,roughness:.58,metalness:.42}),[0,.11,0]));
+  registerPart(g,'motherboard',chassis,[0,-.10,0],false);
+
+  // Display lifts much farther away in exploded view so it no longer hides internals.
+  const display=makeDisplayAssembly(3.82,5.10,.10);
+  display.position.set(0,.42,0);
+  registerPart(g,'display',display,[0,2.05,.20]);
+
+  // Large, clearly readable logic-board area with visible PCB traces and shielding.
+  const board=new THREE.Group();
+  const mainPCB=makePCB(3.18,1.34,'green',.065);
+  board.add(mainPCB);
+
+  const shieldA=rbox(.72,.075,.58,.035,MAT.metal(),[-1.02,.105,-.18]);
+  const shieldB=rbox(.62,.075,.50,.035,MAT.metal(),[1.05,.105,-.16]);
+  board.add(shieldA,shieldB);
+
+  const vrm=makeVRMCluster();
+  vrm.scale.setScalar(.58);
+  vrm.position.set(0,.12,.38);
+  board.add(vrm);
+
+  // Small board connectors and visible gold contact areas.
+  for(const x of [-1.30,-.96,-.62,.72,1.06,1.40]){
+    board.add(rbox(.22,.045,.10,.012,MAT.gold(),[x,.075,.55]));
+  }
+  for(const x of [-1.18,-.80,.82,1.20]){
+    board.add(cyl(.038,.11,new THREE.MeshStandardMaterial({color:0x2d343b,roughness:.35,metalness:.62}),[x,.10,-.48],[0,0,0],18));
+  }
+
+  board.position.set(0,.23,-1.76);
+  registerPart(g,'motherboard',board,[0,.72,-1.62]);
+
+  // CPU / SoC: deliberately separated visually from nearby chips.
+  const cpu=makeCPU(.94,true);
+  cpu.position.set(-.82,.39,-1.92);
+  registerPart(g,'cpu',cpu,[-2.20,1.05,-1.48]);
+
+  // GPU teaching representation: separate highlighted package for clarity.
+  const gpu=makeCPU(.78,true);
+  gpu.scale.set(.86,1,.86);
+  gpu.position.set(.05,.385,-1.88);
+  registerPart(g,'gpu',gpu,[0,1.16,-1.72]);
+
+  // RAM was previously not represented as a distinct clickable part.
+  const ram=new THREE.Group();
+  const ramChip1=makeIC(.42,.34,.065);ramChip1.position.set(-.25,0,0);ram.add(ramChip1);
+  const ramChip2=makeIC(.42,.34,.065);ramChip2.position.set(.25,0,0);ram.add(ramChip2);
+  ram.position.set(.86,.38,-1.91);
+  registerPart(g,'ram',ram,[1.95,1.02,-1.42]);
+
+  // NAND storage shown as two recognizable packages rather than one tiny block.
+  const storage=new THREE.Group();
+  const nand1=makeIC(.38,.46,.060);nand1.position.set(-.23,0,0);storage.add(nand1);
+  const nand2=makeIC(.38,.46,.060);nand2.position.set(.23,0,0);storage.add(nand2);
+  storage.position.set(1.38,.36,-1.45);
+  registerPart(g,'storage',storage,[2.38,.72,-.42]);
+
+  // Three large battery cells make the power section instantly recognizable.
+  const battery=makeBatteryPack(3.20,2.72,3);
+  battery.position.set(0,.19,.66);
+  registerPart(g,'battery',battery,[0,-1.02,.92]);
+
+  // Add visible flex/ribbon cables for realistic internal tablet anatomy.
+  const flexMat=new THREE.MeshStandardMaterial({color:0xc77a2b,roughness:.42,metalness:.30});
+  const flex=new THREE.Group();
+  flex.add(rbox(.22,.018,1.18,.025,flexMat,[-1.40,.30,-.55]));
+  flex.add(rbox(.22,.018,.90,.025,flexMat,[1.38,.30,-.72]));
+  flex.add(rbox(1.30,.018,.18,.025,flexMat,[.55,.30,.12]));
+  flex.add(rbox(.48,.028,.22,.025,MAT.gold(),[-1.40,.315,.02]));
+  flex.add(rbox(.48,.028,.22,.025,MAT.gold(),[1.38,.315,-.25]));
+  g.add(flex);
+
+  // More obvious rear camera module.
+  const cam=makeCameraArray(2,false);
+  cam.scale.setScalar(.78);
+  cam.position.set(-1.24,.38,-2.34);
+  registerPart(g,'camera',cam,[-1.86,1.08,-1.86]);
+
+  // Speakers remain left/right but explode outward farther for readability.
+  const speakerL=makeSpeaker(1.10,.24);
+  speakerL.position.set(-1.30,.22,2.22);
+  registerPart(g,'speaker',speakerL,[-1.95,.42,1.48]);
+
+  const speakerR=makeSpeaker(1.10,.24);
+  speakerR.position.set(1.30,.22,2.22);
+  registerPart(g,'speaker',speakerR,[1.95,.42,1.48]);
+
+  // Wi-Fi module scaled up slightly so its shield and antenna connectors are visible.
+  const wifi=makeWifiModule();
+  wifi.scale.setScalar(1.10);
+  wifi.position.set(-1.48,.34,-1.26);
+  registerPart(g,'wifi',wifi,[-2.22,.56,-.22]);
+
+  // USB-C port stays physically aligned with the tablet body.
+  const port=makePort('usb-c',.94);
+  port.rotation.x=Math.PI/2;
+  port.position.set(0,.12,2.51);
+  registerPart(g,'port',port,[0,-.42,1.72]);
 }
 function buildLaptop(){
   const g=inspectionGroup;const base=new THREE.Group();base.add(rbox(5.05,.20,3.42,.16,MAT.aluminum(),[0,0,0]));base.add(rbox(4.72,.10,3.10,.13,new THREE.MeshStandardMaterial({color:0x2a2e32,roughness:.55,metalness:.48}),[0,.13,0]));registerPart(g,'motherboard',base,[0,-.12,0],false);const display=makeDisplayAssembly(5.0,3.02,.12);display.rotation.x=-1.48;display.position.set(0,1.55,-1.72);registerPart(g,'display',display,[0,.45,-1.1]);const mb=makeMotherboardLaptop();mb.position.set(0,.26,-.60);registerPart(g,'motherboard',mb,[0,.28,-1.02]);const cpu=makeCPU(.58,false);cpu.position.set(-.55,.42,-.67);registerPart(g,'cpu',cpu,[-1.7,.78,-.65]);const gpu=makeCPU(.48,false);gpu.position.set(.38,.40,-.66);gpu.scale.set(.80,.75,.80);registerPart(g,'gpu',gpu,[1.7,.78,-.65]);const ram1=makeRAMModule(1.24,.34,.045,6);ram1.rotation.x=Math.PI/2;ram1.position.set(-.62,.40,.08);registerPart(g,'ram',ram1,[-1.65,.62,.5]);const ram2=makeRAMModule(1.24,.34,.045,6);ram2.rotation.x=Math.PI/2;ram2.position.set(.62,.40,.08);registerPart(g,'ram',ram2,[1.65,.62,.5]);const ssd=makeM2SSD(1.18,.34);ssd.position.set(.72,.40,.55);registerPart(g,'storage',ssd,[1.75,.50,.72]);const battery=makeBatteryPack(3.7,.78,4);battery.position.set(0,.22,1.15);registerPart(g,'battery',battery,[0,-.70,1.30]);const cooling=makeLaptopCooling();cooling.position.set(0,.38,-.18);registerPart(g,'heatsink',cooling,[0,.90,-.28]);for(const x of [-1.42,1.42]){const fan=makeFan(.43,.095,9);fan.position.set(x,.48,-.73);registerPart(g,'fan',fan,[x>0?1.75:-1.75,.52,-1.12]);}const wifi=makeWifiModule();wifi.scale.setScalar(.82);wifi.position.set(-1.72,.38,.42);registerPart(g,'wifi',wifi,[-2.25,.3,.48]);const spL=makeSpeaker(1.18,.25);spL.position.set(-1.75,.23,1.35);registerPart(g,'speaker',spL,[-2.05,.05,1.55]);const spR=makeSpeaker(1.18,.25);spR.position.set(1.75,.23,1.35);registerPart(g,'speaker',spR,[2.05,.05,1.55]);const cam=makeCameraArray(1,true);cam.scale.setScalar(.52);cam.rotation.x=Math.PI/2;cam.position.set(0,1.63,-1.58);registerPart(g,'camera',cam,[0,.55,-1.5]);const port=makePort('usb-c',.82);port.rotation.z=Math.PI/2;port.position.set(2.36,.15,.2);registerPart(g,'port',port,[1.7,-.25,.5]);
