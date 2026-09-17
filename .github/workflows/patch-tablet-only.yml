@@ -22,125 +22,17 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-
+          import base64
           p = Path('app-realistic.js')
           text = p.read_text(encoding='utf-8')
           start = text.index('function buildTablet(){')
           end = text.index('\nfunction buildLaptop(){', start)
-
-          new_func = r'''function buildTablet(){
-  const g=inspectionGroup;
-
-  // Keep the original tablet chassis, but make the internal layout much clearer.
-  const chassis=new THREE.Group();
-  chassis.add(rbox(3.96,.16,5.25,.24,MAT.aluminum(),[0,0,0]));
-  chassis.add(rbox(3.70,.07,4.98,.20,new THREE.MeshStandardMaterial({color:0x252a2f,roughness:.58,metalness:.42}),[0,.11,0]));
-  registerPart(g,'motherboard',chassis,[0,-.10,0],false);
-
-  // Display lifts much farther away in exploded view so it no longer hides internals.
-  const display=makeDisplayAssembly(3.82,5.10,.10);
-  display.position.set(0,.42,0);
-  registerPart(g,'display',display,[0,2.05,.20]);
-
-  // Large, clearly readable logic-board area with visible PCB traces and shielding.
-  const board=new THREE.Group();
-  const mainPCB=makePCB(3.18,1.34,'green',.065);
-  board.add(mainPCB);
-
-  const shieldA=rbox(.72,.075,.58,.035,MAT.metal(),[-1.02,.105,-.18]);
-  const shieldB=rbox(.62,.075,.50,.035,MAT.metal(),[1.05,.105,-.16]);
-  board.add(shieldA,shieldB);
-
-  const vrm=makeVRMCluster();
-  vrm.scale.setScalar(.58);
-  vrm.position.set(0,.12,.38);
-  board.add(vrm);
-
-  // Small board connectors and visible gold contact areas.
-  for(const x of [-1.30,-.96,-.62,.72,1.06,1.40]){
-    board.add(rbox(.22,.045,.10,.012,MAT.gold(),[x,.075,.55]));
-  }
-  for(const x of [-1.18,-.80,.82,1.20]){
-    board.add(cyl(.038,.11,new THREE.MeshStandardMaterial({color:0x2d343b,roughness:.35,metalness:.62}),[x,.10,-.48],[0,0,0],18));
-  }
-
-  board.position.set(0,.23,-1.76);
-  registerPart(g,'motherboard',board,[0,.72,-1.62]);
-
-  // CPU / SoC: deliberately separated visually from nearby chips.
-  const cpu=makeCPU(.94,true);
-  cpu.position.set(-.82,.39,-1.92);
-  registerPart(g,'cpu',cpu,[-2.20,1.05,-1.48]);
-
-  // GPU teaching representation: separate highlighted package for clarity.
-  const gpu=makeCPU(.78,true);
-  gpu.scale.set(.86,1,.86);
-  gpu.position.set(.05,.385,-1.88);
-  registerPart(g,'gpu',gpu,[0,1.16,-1.72]);
-
-  // RAM was previously not represented as a distinct clickable part.
-  const ram=new THREE.Group();
-  const ramChip1=makeIC(.42,.34,.065);ramChip1.position.set(-.25,0,0);ram.add(ramChip1);
-  const ramChip2=makeIC(.42,.34,.065);ramChip2.position.set(.25,0,0);ram.add(ramChip2);
-  ram.position.set(.86,.38,-1.91);
-  registerPart(g,'ram',ram,[1.95,1.02,-1.42]);
-
-  // NAND storage shown as two recognizable packages rather than one tiny block.
-  const storage=new THREE.Group();
-  const nand1=makeIC(.38,.46,.060);nand1.position.set(-.23,0,0);storage.add(nand1);
-  const nand2=makeIC(.38,.46,.060);nand2.position.set(.23,0,0);storage.add(nand2);
-  storage.position.set(1.38,.36,-1.45);
-  registerPart(g,'storage',storage,[2.38,.72,-.42]);
-
-  // Three large battery cells make the power section instantly recognizable.
-  const battery=makeBatteryPack(3.20,2.72,3);
-  battery.position.set(0,.19,.66);
-  registerPart(g,'battery',battery,[0,-1.02,.92]);
-
-  // Add visible flex/ribbon cables for realistic internal tablet anatomy.
-  const flexMat=new THREE.MeshStandardMaterial({color:0xc77a2b,roughness:.42,metalness:.30});
-  const flex=new THREE.Group();
-  flex.add(rbox(.22,.018,1.18,.025,flexMat,[-1.40,.30,-.55]));
-  flex.add(rbox(.22,.018,.90,.025,flexMat,[1.38,.30,-.72]));
-  flex.add(rbox(1.30,.018,.18,.025,flexMat,[.55,.30,.12]));
-  flex.add(rbox(.48,.028,.22,.025,MAT.gold(),[-1.40,.315,.02]));
-  flex.add(rbox(.48,.028,.22,.025,MAT.gold(),[1.38,.315,-.25]));
-  g.add(flex);
-
-  // More obvious rear camera module.
-  const cam=makeCameraArray(2,false);
-  cam.scale.setScalar(.78);
-  cam.position.set(-1.24,.38,-2.34);
-  registerPart(g,'camera',cam,[-1.86,1.08,-1.86]);
-
-  // Speakers remain left/right but explode outward farther for readability.
-  const speakerL=makeSpeaker(1.10,.24);
-  speakerL.position.set(-1.30,.22,2.22);
-  registerPart(g,'speaker',speakerL,[-1.95,.42,1.48]);
-
-  const speakerR=makeSpeaker(1.10,.24);
-  speakerR.position.set(1.30,.22,2.22);
-  registerPart(g,'speaker',speakerR,[1.95,.42,1.48]);
-
-  // Wi‑Fi module scaled up slightly so its shield and antenna connectors are visible.
-  const wifi=makeWifiModule();
-  wifi.scale.setScalar(1.10);
-  wifi.position.set(-1.48,.34,-1.26);
-  registerPart(g,'wifi',wifi,[-2.22,.56,-.22]);
-
-  // USB-C port stays physically aligned with the tablet body.
-  const port=makePort('usb-c',.94);
-  port.rotation.x=Math.PI/2;
-  port.position.set(0,.12,2.51);
-  registerPart(g,'port',port,[0,-.42,1.72]);
-}'''
-
+          encoded = 'ZnVuY3Rpb24gYnVpbGRUYWJsZXQoKXsKICBjb25zdCBnPWluc3BlY3Rpb25Hcm91cDsKCiAgLy8gS2VlcCB0aGUgb3JpZ2luYWwgdGFibGV0IGNoYXNzaXMsIGJ1dCBtYWtlIHRoZSBpbnRlcm5hbCBsYXlvdXQgbXVjaCBjbGVhcmVyLgogIGNvbnN0IGNoYXNzaXM9bmV3IFRIUkVFLkdyb3VwKCk7CiAgY2hhc3Npcy5hZGQocmJveCgzLjk2LC4xNiw1LjI1LC4yNCxNQVQuYWx1bWludW0oKSxbMCwwLDBdKSk7CiAgY2hhc3Npcy5hZGQocmJveCgzLjcwLC4wNyw0Ljk4LC4yMCxuZXcgVEhSRUUuTWVzaFN0YW5kYXJkTWF0ZXJpYWwoe2NvbG9yOjB4MjUyYTJmLHJvdWdobmVzczouNTgsbWV0YWxuZXNzOi40Mn0pLFswLC4xMSwwXSkpOwogIHJlZ2lzdGVyUGFydChnLCdtb3RoZXJib2FyZCcsY2hhc3NpcyxbMCwtLjEwLDBdLGZhbHNlKTsKCiAgLy8gRGlzcGxheSBsaWZ0cyBtdWNoIGZhcnRoZXIgYXdheSBpbiBleHBsb2RlZCB2aWV3IHNvIGl0IG5vIGxvbmdlciBoaWRlcyBpbnRlcm5hbHMuCiAgY29uc3QgZGlzcGxheT1tYWtlRGlzcGxheUFzc2VtYmx5KDMuODIsNS4xMCwuMTApOwogIGRpc3BsYXkucG9zaXRpb24uc2V0KDAsLjQyLDApOwogIHJlZ2lzdGVyUGFydChnLCdkaXNwbGF5JyxkaXNwbGF5LFswLDIuMDUsLjIwXSk7CgogIC8vIExhcmdlLCBjbGVhcmx5IHJlYWRhYmxlIGxvZ2ljLWJvYXJkIGFyZWEgd2l0aCB2aXNpYmxlIFBDQiB0cmFjZXMgYW5kIHNoaWVsZGluZy4KICBjb25zdCBib2FyZD1uZXcgVEhSRUUuR3JvdXAoKTsKICBjb25zdCBtYWluUENCPW1ha2VQQ0IoMy4xOCwxLjM0LCdncmVlbicsLjA2NSk7CiAgYm9hcmQuYWRkKG1haW5QQ0IpOwoKICBjb25zdCBzaGllbGRBPXJib3goLjcyLC4wNzUsLjU4LC4wMzUsTUFULm1ldGFsKCksWy0xLjAyLC4xMDUsLS4xOF0pOwogIGNvbnN0IHNoaWVsZEI9cmJveCguNjIsLjA3NSwuNTAsLjAzNSxNQVQubWV0YWwoKSxbMS4wNSwuMTA1LC0uMTZdKTsKICBib2FyZC5hZGQoc2hpZWxkQSxzaGllbGRCKTsKCiAgY29uc3QgdnJtPW1ha2VWUk1DbHVzdGVyKCk7CiAgdnJtLnNjYWxlLnNldFNjYWxhciguNTgpOwogIHZybS5wb3NpdGlvbi5zZXQoMCwuMTIsLjM4KTsKICBib2FyZC5hZGQodnJtKTsKCiAgLy8gU21hbGwgYm9hcmQgY29ubmVjdG9ycyBhbmQgdmlzaWJsZSBnb2xkIGNvbnRhY3QgYXJlYXMuCiAgZm9yKGNvbnN0IHggb2YgWy0xLjMwLC0uOTYsLS42MiwuNzIsMS4wNiwxLjQwXSl7CiAgICBib2FyZC5hZGQocmJveCguMjIsLjA0NSwuMTAsLjAxMixNQVQuZ29sZCgpLFt4LC4wNzUsLjU1XSkpOwogIH0KICBmb3IoY29uc3QgeCBvZiBbLTEuMTgsLS44MCwuODIsMS4yMF0pewogICAgYm9hcmQuYWRkKGN5bCguMDM4LC4xMSxuZXcgVEhSRUUuTWVzaFN0YW5kYXJkTWF0ZXJpYWwoe2NvbG9yOjB4MmQzNDNiLHJvdWdobmVzczouMzUsbWV0YWxuZXNzOi42Mn0pLFt4LC4xMCwtLjQ4XSxbMCwwLDBdLDE4KSk7CiAgfQoKICBib2FyZC5wb3NpdGlvbi5zZXQoMCwuMjMsLTEuNzYpOwogIHJlZ2lzdGVyUGFydChnLCdtb3RoZXJib2FyZCcsYm9hcmQsWzAsLjcyLC0xLjYyXSk7CgogIC8vIENQVSAvIFNvQzogZGVsaWJlcmF0ZWx5IHNlcGFyYXRlZCB2aXN1YWxseSBmcm9tIG5lYXJieSBjaGlwcy4KICBjb25zdCBjcHU9bWFrZUNQVSguOTQsdHJ1ZSk7CiAgY3B1LnBvc2l0aW9uLnNldCgtLjgyLC4zOSwtMS45Mik7CiAgcmVnaXN0ZXJQYXJ0KGcsJ2NwdScsY3B1LFstMi4yMCwxLjA1LC0xLjQ4XSk7CgogIC8vIEdQVSB0ZWFjaGluZyByZXByZXNlbnRhdGlvbjogc2VwYXJhdGUgaGlnaGxpZ2h0ZWQgcGFja2FnZSBmb3IgY2xhcml0eS4KICBjb25zdCBncHU9bWFrZUNQVSguNzgsdHJ1ZSk7CiAgZ3B1LnNjYWxlLnNldCguODYsMSwuODYpOwogIGdwdS5wb3NpdGlvbi5zZXQoLjA1LC4zODUsLTEuODgpOwogIHJlZ2lzdGVyUGFydChnLCdncHUnLGdwdSxbMCwxLjE2LC0xLjcyXSk7CgogIC8vIFJBTSB3YXMgcHJldmlvdXNseSBub3QgcmVwcmVzZW50ZWQgYXMgYSBkaXN0aW5jdCBjbGlja2FibGUgcGFydC4KICBjb25zdCByYW09bmV3IFRIUkVFLkdyb3VwKCk7CiAgY29uc3QgcmFtQ2hpcDE9bWFrZUlDKC40MiwuMzQsLjA2NSk7cmFtQ2hpcDEucG9zaXRpb24uc2V0KC0uMjUsMCwwKTtyYW0uYWRkKHJhbUNoaXAxKTsKICBjb25zdCByYW1DaGlwMj1tYWtlSUMoLjQyLC4zNCwuMDY1KTtyYW1DaGlwMi5wb3NpdGlvbi5zZXQoLjI1LDAsMCk7cmFtLmFkZChyYW1DaGlwMik7CiAgcmFtLnBvc2l0aW9uLnNldCguODYsLjM4LC0xLjkxKTsKICByZWdpc3RlclBhcnQoZywncmFtJyxyYW0sWzEuOTUsMS4wMiwtMS40Ml0pOwoKICAvLyBOQU5EIHN0b3JhZ2Ugc2hvd24gYXMgdHdvIHJlY29nbml6YWJsZSBwYWNrYWdlcyByYXRoZXIgdGhhbiBvbmUgdGlueSBibG9jay4KICBjb25zdCBzdG9yYWdlPW5ldyBUSFJFRS5Hcm91cCgpOwogIGNvbnN0IG5hbmQxPW1ha2VJQyguMzgsLjQ2LC4wNjApO25hbmQxLnBvc2l0aW9uLnNldCgtLjIzLDAsMCk7c3RvcmFnZS5hZGQobmFuZDEpOwogIGNvbnN0IG5hbmQyPW1ha2VJQyguMzgsLjQ2LC4wNjApO25hbmQyLnBvc2l0aW9uLnNldCguMjMsMCwwKTtzdG9yYWdlLmFkZChuYW5kMik7CiAgc3RvcmFnZS5wb3NpdGlvbi5zZXQoMS4zOCwuMzYsLTEuNDUpOwogIHJlZ2lzdGVyUGFydChnLCdzdG9yYWdlJyxzdG9yYWdlLFsyLjM4LC43MiwtLjQyXSk7CgogIC8vIFRocmVlIGxhcmdlIGJhdHRlcnkgY2VsbHMgbWFrZSB0aGUgcG93ZXIgc2VjdGlvbiBpbnN0YW50bHkgcmVjb2duaXphYmxlLgogIGNvbnN0IGJhdHRlcnk9bWFrZUJhdHRlcnlQYWNrKDMuMjAsMi43MiwzKTsKICBiYXR0ZXJ5LnBvc2l0aW9uLnNldCgwLC4xOSwuNjYpOwogIHJlZ2lzdGVyUGFydChnLCdiYXR0ZXJ5JyxiYXR0ZXJ5LFswLC0xLjAyLC45Ml0pOwoKICAvLyBBZGQgdmlzaWJsZSBmbGV4L3JpYmJvbiBjYWJsZXMgZm9yIHJlYWxpc3RpYyBpbnRlcm5hbCB0YWJsZXQgYW5hdG9teS4KICBjb25zdCBmbGV4TWF0PW5ldyBUSFJFRS5NZXNoU3RhbmRhcmRNYXRlcmlhbCh7Y29sb3I6MHhjNzdhMmIscm91Z2huZXNzOi40MixtZXRhbG5lc3M6LjMwfSk7CiAgY29uc3QgZmxleD1uZXcgVEhSRUUuR3JvdXAoKTsKICBmbGV4LmFkZChyYm94KC4yMiwuMDE4LDEuMTgsLjAyNSxmbGV4TWF0LFstMS40MCwuMzAsLS41NV0pKTsKICBmbGV4LmFkZChyYm94KC4yMiwuMDE4LC45MCwuMDI1LGZsZXhNYXQsWzEuMzgsLjMwLC0uNzJdKSk7CiAgZmxleC5hZGQocmJveCgxLjMwLC4wMTgsLjE4LC4wMjUsZmxleE1hdCxbLjU1LC4zMCwuMTJdKSk7CiAgZmxleC5hZGQocmJveCguNDgsLjAyOCwuMjIsLjAyNSxNQVQuZ29sZCgpLFstMS40MCwuMzE1LC4wMl0pKTsKICBmbGV4LmFkZChyYm94KC40OCwuMDI4LC4yMiwuMDI1LE1BVC5nb2xkKCksWzEuMzgsLjMxNSwtLjI1XSkpOwogIGcuYWRkKGZsZXgpOwoKICAvLyBNb3JlIG9idmlvdXMgcmVhciBjYW1lcmEgbW9kdWxlLgogIGNvbnN0IGNhbT1tYWtlQ2FtZXJhQXJyYXkoMixmYWxzZSk7CiAgY2FtLnNjYWxlLnNldFNjYWxhciguNzgpOwogIGNhbS5wb3NpdGlvbi5zZXQoLTEuMjQsLjM4LC0yLjM0KTsKICByZWdpc3RlclBhcnQoZywnY2FtZXJhJyxjYW0sWy0xLjg2LDEuMDgsLTEuODZdKTsKCiAgLy8gU3BlYWtlcnMgcmVtYWluIGxlZnQvcmlnaHQgYnV0IGV4cGxvZGUgb3V0d2FyZCBmYXJ0aGVyIGZvciByZWFkYWJpbGl0eS4KICBjb25zdCBzcGVha2VyTD1tYWtlU3BlYWtlcigxLjEwLC4yNCk7CiAgc3BlYWtlckwucG9zaXRpb24uc2V0KC0xLjMwLC4yMiwyLjIyKTsKICByZWdpc3RlclBhcnQoZywnc3BlYWtlcicsc3BlYWtlckwsWy0xLjk1LC40MiwxLjQ4XSk7CgogIGNvbnN0IHNwZWFrZXJSPW1ha2VTcGVha2VyKDEuMTAsLjI0KTsKICBzcGVha2VyUi5wb3NpdGlvbi5zZXQoMS4zMCwuMjIsMi4yMik7CiAgcmVnaXN0ZXJQYXJ0KGcsJ3NwZWFrZXInLHNwZWFrZXJSLFsxLjk1LC40MiwxLjQ4XSk7CgogIC8vIFdpLUZpIG1vZHVsZSBzY2FsZWQgdXAgc2xpZ2h0bHkgc28gaXRzIHNoaWVsZCBhbmQgYW50ZW5uYSBjb25uZWN0b3JzIGFyZSB2aXNpYmxlLgogIGNvbnN0IHdpZmk9bWFrZVdpZmlNb2R1bGUoKTsKICB3aWZpLnNjYWxlLnNldFNjYWxhcigxLjEwKTsKICB3aWZpLnBvc2l0aW9uLnNldCgtMS40OCwuMzQsLTEuMjYpOwogIHJlZ2lzdGVyUGFydChnLCd3aWZpJyx3aWZpLFstMi4yMiwuNTYsLS4yMl0pOwoKICAvLyBVU0ItQyBwb3J0IHN0YXlzIHBoeXNpY2FsbHkgYWxpZ25lZCB3aXRoIHRoZSB0YWJsZXQgYm9keS4KICBjb25zdCBwb3J0PW1ha2VQb3J0KCd1c2ItYycsLjk0KTsKICBwb3J0LnJvdGF0aW9uLng9TWF0aC5QSS8yOwogIHBvcnQucG9zaXRpb24uc2V0KDAsLjEyLDIuNTEpOwogIHJlZ2lzdGVyUGFydChnLCdwb3J0Jyxwb3J0LFswLC0uNDIsMS43Ml0pOwp9'
+          new_func = base64.b64decode(encoded).decode('utf-8')
           patched = text[:start] + new_func + text[end:]
           p.write_text(patched, encoding='utf-8')
           PY
-
           node --check app-realistic.js
-
           git config user.name "Amir Saeid Dehghan"
           git config user.email "108151841+saaeiddev@users.noreply.github.com"
           git add app-realistic.js
