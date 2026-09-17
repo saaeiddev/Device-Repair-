@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#17110d" />
+  <meta name="description" content="DEVICE REPAIR — a bilingual interactive 3D hardware learning experience." />
+  <title>DEVICE REPAIR — 3D Hardware Explorer</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="stylesheet" href="./styles.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="app" aria-live="polite">
+    <div id="loader" class="loader" role="status" aria-label="Loading DEVICE REPAIR">
+      <div class="loader-card">
+        <div class="loader-icon" aria-hidden="true">🛠️</div>
+        <h1>DEVICE REPAIR</h1>
+        <p id="loader-copy">Preparing the Repair Bench…</p>
+        <div class="progress"><span id="progress-bar"></span></div>
+        <span id="progress-text">0%</span>
+      </div>
+    </div>
+
+    <canvas id="scene" aria-label="Interactive 3D electronics repair room"></canvas>
+    <div id="fallback" class="fallback hidden" role="alert">
+      <h2>3D mode is unavailable</h2>
+      <p>You can still explore the hardware lessons from the Learn menu.</p>
+    </div>
+
+    <header class="topbar glass">
+      <button class="brand" id="home-btn" aria-label="Return to repair room">
+        <span class="brand-mark">DR</span>
+        <span><b>DEVICE REPAIR</b><small id="brand-sub">3D Hardware Lab</small></span>
+      </button>
+      <nav aria-label="Main navigation">
+        <button data-nav="home" id="nav-home">Home</button>
+        <button data-nav="devices" id="nav-devices">Devices</button>
+        <button data-nav="explorer" id="nav-explorer">Hardware Explorer</button>
+        <button data-nav="learn" id="nav-learn">Learn</button>
+        <button data-nav="about" id="nav-about">About</button>
+      </nav>
+      <div class="top-actions">
+        <button id="sound-btn" class="icon-btn" aria-pressed="true" title="Sound">🔊</button>
+        <button id="lang-btn" class="lang-btn" aria-label="Switch language">فارسی</button>
+      </div>
+    </header>
+
+    <section id="room-hud" class="room-hud glass">
+      <span class="eyebrow" id="room-eyebrow">COZY ELECTRONICS WORKSHOP</span>
+      <h2 id="room-title">What would you like to explore?</h2>
+      <p id="room-copy">Choose a device on the repair bench. Rotate the room, then click a device to inspect what is inside.</p>
+      <div class="device-pills" id="device-pills"></div>
+    </section>
+
+    <div id="hover-label" class="hover-label hidden"></div>
+    <div id="labels-layer" class="labels-layer" aria-hidden="true"></div>
+
+    <section id="explorer-controls" class="explorer-controls glass hidden" aria-label="Hardware explorer controls">
+      <div class="control-title">
+        <button id="back-btn" class="icon-btn" aria-label="Back to repair room">←</button>
+        <div><span class="eyebrow" id="explorer-eyebrow">HARDWARE EXPLORER</span><h2 id="device-title">Device</h2></div>
+      </div>
+      <div class="control-grid">
+        <button id="explode-btn">Explode Device</button>
+        <button id="assemble-btn">Assemble</button>
+        <button id="reset-btn">Reset View</button>
+        <button id="labels-btn" aria-pressed="true">Labels: On</button>
+        <button id="relations-btn" aria-pressed="false">How Parts Work Together</button>
+        <button id="cooling-btn" class="hidden" aria-pressed="false">Cooling Demo</button>
+      </div>
+      <p class="gesture-tip" id="gesture-tip">Drag to rotate • Scroll / pinch to zoom • Click a component to learn</p>
+    </section>
+
+    <aside id="info-panel" class="info-panel glass hidden" aria-live="polite">
+      <button id="close-info" class="close-btn" aria-label="Close">×</button>
+      <span class="eyebrow" id="info-kicker">COMPONENT</span>
+      <h2 id="info-name">CPU</h2>
+      <h3 id="role-label">Role</h3>
+      <p id="info-role"></p>
+      <div class="meta-row"><b id="found-label">Found in</b><span id="info-found"></span></div>
+      <div class="meta-row"><b id="works-label">Works with</b><span id="info-works"></span></div>
+      <button id="focus-btn" class="primary-btn">Focus Component</button>
+      <button id="clear-focus-btn" class="text-btn">Show all components</button>
+    </aside>
+
+    <section id="drawer" class="drawer glass hidden" aria-live="polite">
+      <button id="drawer-close" class="close-btn" aria-label="Close">×</button>
+      <span class="eyebrow" id="drawer-kicker">DEVICE REPAIR</span>
+      <h2 id="drawer-title"></h2>
+      <div id="drawer-content"></div>
+    </section>
+
+    <div class="corner-help glass" id="assistant-bubble">
+      <span aria-hidden="true">🤖</span><p id="assistant-copy">Choose a device to explore its hardware.</p>
+    </div>
+  </div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
