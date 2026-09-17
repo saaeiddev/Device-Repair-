@@ -103,6 +103,15 @@
     </div>
   </div>
 
+  <script>
+    window.setTimeout(() => {
+      const loading = document.getElementById('loader');
+      if (loading && !loading.classList.contains('done')) {
+        loading.classList.add('done');
+        document.getElementById('fallback')?.classList.remove('hidden');
+      }
+    }, 12000);
+  </script>
   <script type="module" src="./app.js"></script>
 </body>
 </html>
